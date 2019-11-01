@@ -60,7 +60,7 @@ elif('PATH_INFO' in os.environ and os.environ['PATH_INFO'] == '/form'):
 <form method="post" action="/cgi-bin/restTurnin.cgi/courses">
         <div><label for="dept">Department:</label><input id="dept" name="dept" type="text" ></div>
         <div><label for="course">Course Number:</label><input id="course" name="course" type="text" ></div>
-        <div><label for="units">Units:</label><input id="units" name="units" type="text" step="1"></div>
+        <div><label for="units">Units:</label><input id="units" name="units" type="number" step="1"></div>
         <div><input type="submit" id="submit" name="submit" value="Register"></div>
     </form></body></html> """)
 
