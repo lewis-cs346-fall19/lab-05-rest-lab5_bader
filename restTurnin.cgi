@@ -13,7 +13,29 @@ cgitb.enable()
 form = cgi.FieldStorage()
 
 
-if ((not ('PATH_INFO' in os.environ)) or ('PATH_INFO' in os.environ and os.environ['PATH_INFO'] == '/')):
+def main():
+  if ((not ('PATH_INFO' in os.environ)) or ('PATH_INFO' in os.environ and os.environ['PATH_INFO'] == '/')):
+    mainPage()
+
+  elif ('PATH_INFO' in os.environ and os.environ['REQUEST_METHOD'] == "GET" and ((os.environ['PATH_INFO'] == '/courses') or os.environ['PATH_INFO'] == "/courses/")):
+    showAllCourses()
+
+  elif ('PATH_INFO' in os.environ and re.search("/courses/\d+", os.environ['PATH_INFO'])):
+    showSpecificCourse()
+
+  elif('PATH_INFO' in os.environ and os.environ['PATH_INFO'] == '/form'):
+    fillOutForm()
+
+  elif ('PATH_INFO' in os.environ and os.environ['REQUEST_METHOD'] == "POST" and ((os.environ['PATH_INFO'] == '/courses') or (os.environ['PATH_INFO'] == "/courses/")) and ("units" in form and "dept" in form and "course" in form)):
+    postToDatabase()
+
+  elif ('PATH_INFO' in os.environ and os.environ['REQUEST_METHOD'] == "POST" and ((os.environ['PATH_INFO'] == '/courses') or (os.environ['PATH_INFO'] == "/courses/"))):
+    postButNotEnoughVariables()
+  else:
+    badURL()
+
+
+def mainPage():
   print("Connnection-Type: text/html")
   print("Status: 200 OK")
   print()
@@ -23,7 +45,7 @@ if ((not ('PATH_INFO' in os.environ)) or ('PATH_INFO' in os.environ and os.envir
     <a href="/cgi-bin/restTurnin.cgi/form">new course form</a></div><br><div>
     <a href="/cgi-bin/restTurnin.cgi">Back to root of this site</a></div></body></html> """)
 
-elif ('PATH_INFO' in os.environ and os.environ['REQUEST_METHOD'] == "GET" and ((os.environ['PATH_INFO'] == '/courses') or os.environ['PATH_INFO'] == "/courses/")):
+def showAllCourses():
   print("Content-Type: application/json")
   print("Status: 200 OK")
   print()
@@ -36,25 +58,28 @@ elif ('PATH_INFO' in os.environ and os.environ['REQUEST_METHOD'] == "GET" and ((
   cursor.close();
   connection.commit();
   connection.close();
-elif ('PATH_INFO' in os.environ and re.search("/courses/\d+", os.environ['PATH_INFO'])):
-  print("Content-Type: application/json")
-  print("Status: 200 OK")
-  print()
+
+def showSpecificCourse():
   id = str(int(re.findall('\d+',os.environ['PATH_INFO'])[0]))
   connection = MySQLdb.connect(host = passwords.SQL_HOST, user = passwords.SQL_USER, passwd = passwords.SQL_PASSWD, db="courses", charset = "utf8")
   cursor = connection.cursor();
-  command = "SELECT * FROM courses WHERE id=%s;"%id
-  #cursor.execute("SELECT * FROM courses WHERE id={};".format(id)) # works but is dirty
-  #cursor.execute("SELECT * FROM courses WHERE id=%s", (id)) # does not work, but it uses one less line
-  #cursor.execute(command)
-  cursor.execute("SELECT * FROM courses WHERE id=%s;"%id)
+  cursor.execute("SELECT * FROM courses WHERE id=%s", (id,)) # need comma to specify tuple
   results = cursor.fetchall()
-  results_json = json.dumps(results)
-  print(results_json)
   cursor.close()
   connection.commit()
   connection.close()
-elif('PATH_INFO' in os.environ and os.environ['PATH_INFO'] == '/form'):
+  if(results):
+    print("Content-Type: application/json")
+    print("Status: 200 OK")
+    print()
+    results_json = json.dumps(results)
+    print(results_json)
+  else:
+    badURL()
+
+
+
+def fillOutForm():
   print("Content-Type: text/html")
   print("Status: 200 OK")
   print()
@@ -68,7 +93,7 @@ elif('PATH_INFO' in os.environ and os.environ['PATH_INFO'] == '/form'):
         <div><input type="submit" id="submit" name="submit" value="Register"></div>
     </form></body></html> """)
 
-elif ('PATH_INFO' in os.environ and os.environ['REQUEST_METHOD'] == "POST" and ((os.environ['PATH_INFO'] == '/courses') or (os.environ['PATH_INFO'] == "/courses/")) and ("units" in form and "dept" in form and "course" in form)):
+def postToDatabase():
   units = str(form["units"].value)
   dept = str(form["dept"].value)
   course = str(form["course"].value)
@@ -81,13 +106,11 @@ elif ('PATH_INFO' in os.environ and os.environ['REQUEST_METHOD'] == "POST" and (
   cursor.close()
   connection.commit()
   connection.close()
-  print("Content-Type: text/html")
   print("Status: 302 Redirect")
   print("Location: /cgi-bin/restTurnin.cgi" + url)
   print()
 
-
-elif ('PATH_INFO' in os.environ and os.environ['REQUEST_METHOD'] == "POST" and ((os.environ['PATH_INFO'] == '/courses') or (os.environ['PATH_INFO'] == "/courses/"))):
+def postButNotEnoughVariables():
   print("Content-Type: text/html")
   print("Status: 200 OK")
   print()
@@ -98,10 +121,14 @@ elif ('PATH_INFO' in os.environ and os.environ['REQUEST_METHOD'] == "POST" and (
     print("course in form")
   if "dept" in form:
     print("dept in form")
-else:
-    print("Content-Type: text/html")
-    print("Status: 200 OK")
-    print()
-    print("""<html><head><meta charset="UTF-8"><title>Bad url</title></head><body>
-      <p>This is not a valid url, please go <a href="/cgi-bin/restTurnin.cgi">Back to the root page</a>
-      </p><br></body></html>""")
+
+def badURL():
+  print("Content-Type: text/html")
+  print("Status: 200 OK")
+  print()
+  print("""<html><head><meta charset="UTF-8"><title>Bad url</title></head><body>
+    <p>This is not a valid url, please go <a href="/cgi-bin/restTurnin.cgi">Back to the root page</a>
+    </p><br></body></html>""")
+
+if __name__ == "__main__":
+  main()
