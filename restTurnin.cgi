@@ -94,7 +94,7 @@ def fillOutForm():
     </form></body></html> """)
 
 def postToDatabase():
-  units = str(form["units"].value)
+  units = str(abs(int(form["units"].value)))
   dept = str(form["dept"].value)
   course = str(form["course"].value)
   connection = MySQLdb.connect(host = passwords.SQL_HOST, user = passwords.SQL_USER, passwd = passwords.SQL_PASSWD, db="courses", charset = "utf8")
